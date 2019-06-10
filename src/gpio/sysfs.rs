@@ -1,5 +1,7 @@
 //! Types for GPIO input/output using the Linux sysfs interface.
 
+use std::time::Duration;
+
 pub struct SysfsInputPin {}
 
 impl super::InputPin for SysfsInputPin {
@@ -11,6 +13,10 @@ impl super::InputPin for SysfsInputPin {
         panic!("Not yet implemented.");
     }
     fn wait(&self) {
+        // TODO
+        panic!("Not yet implemented.");
+    }
+    fn wait_timeout(&self, timeout: Duration) -> bool {
         // TODO
         panic!("Not yet implemented.");
     }
@@ -35,6 +41,10 @@ impl super::InputPinGroup for SysfsInputPinGroup {
         panic!("Not yet implemented.");
     }
     fn wait(&self) {
+        // TODO
+        panic!("Not yet implemented.");
+    }
+    fn wait_timeout(&self, timeout: Duration) -> Option<u64> {
         // TODO
         panic!("Not yet implemented.");
     }

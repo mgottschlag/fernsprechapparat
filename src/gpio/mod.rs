@@ -1,5 +1,7 @@
 //! Types for GPIO input/output.
 
+use std::time::Duration;
+
 pub mod sim;
 pub mod sysfs;
 
@@ -14,6 +16,11 @@ pub trait InputPin {
     fn read(&self) -> bool;
     /// Waits for a pin value change interrupt.
     fn wait(&self);
+    /// Waits for a pin value change interrupt or until a timeout expires.
+    ///
+    /// The function returns false if no interrupt arrived within the specified
+    /// duration.
+    fn wait_timeout(&self, timeout: Duration) -> bool;
 
     /// Groups multiple input pins into an input pin set so that a single call
     /// can be used to wait for changes of multiple pins.
@@ -35,6 +42,11 @@ pub trait InputPinGroup {
     fn read(&self) -> u64;
     /// Waits for a value change of one of the pins.
     fn wait(&self);
+    /// Waits for a pin value change interrupt or until a timeout expires.
+    ///
+    /// The function either returns the number of the pin which triggered the
+    /// interrupt or `None` if the timeout expired.
+    fn wait_timeout(&self, timeout: Duration) -> Option<u64>;
     /// Returns the number of pins in this group.
     fn len(&self) -> usize;
 

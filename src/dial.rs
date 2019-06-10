@@ -1,9 +1,13 @@
 //! Interface to a rotary dial connected via GPIOs.
 
-use super::gpio::InputPin;
+use super::gpio::{InputPin, InputPinGroup};
 use super::Event;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 /// Index of the nsa contact in the pin group.
 const NSA: usize = 0;
@@ -18,28 +22,75 @@ const NSI: usize = 1;
 ///
 /// The implementation assumes that the switches are active-low, meaning that a
 /// pin value of `false` signals that the switch has been closed.
-///
-/// The implementation spawns a separate thread for I/O. To cleanly exit the
-/// thread, close the receiving end of the mpsc channel and *then* drop the
-/// `Dial` object.
-pub struct Dial<Pin: InputPin> {
-    pins: Pin::Group,
-    sender: Sender<Event>,
+pub struct Dial {
+    thread: Option<JoinHandle<()>>,
+    stop_thread: Arc<AtomicBool>,
 }
 
-impl<Pin: InputPin> Dial<Pin> {
-    fn new(nsa: Pin, nsi: Pin, sender: Sender<Event>) -> Self {
-        // TODO
+impl Dial {
+    pub fn new<Pin: InputPin + Send + 'static>(nsa: Pin, nsi: Pin, sender: Sender<Event>) -> Self {
+        let stop_thread = Arc::new(AtomicBool::new(false));
+        let stop_copy = stop_thread.clone();
+        let thread = thread::spawn(move || {
+            let pins = Pin::create_group(vec![Box::new(nsa), Box::new(nsi)]);
+
+            let mut counting = false;
+            let mut count = 0;
+            let mut impulse = false;
+
+            loop {
+                // Wait with timeout to allow Drop to terminate the thread in a
+                // timely fashion.
+                let wait_result = pins.wait_timeout(Duration::from_millis(1000));
+                if stop_thread.load(Ordering::SeqCst) {
+                    return;
+                }
+                if wait_result.is_some() {
+                    let pin_state = pins.read();
+                    // "== 0" because the inputs are active-low
+                    let nsa = (pin_state & (1 << NSA)) == 0;
+                    let nsi = (pin_state & (1 << NSI)) == 0;
+                    if nsa && !counting {
+                        counting = true;
+                        count = 0;
+                    } else if !nsa && counting {
+                        counting = false;
+                        // 10 impulses = '0'
+                        let digit = match count {
+                            10 => 0,
+                            count => count,
+                        };
+                        // 0 impulses or more than 10 impulses = invalid
+                        if count != 0 && count <= 10 {
+                            let result = sender.send(Event::Dialed(digit));
+                            if result.is_err() {
+                                break;
+                            }
+                        }
+                    }
+                    if counting && !nsi && !impulse {
+                        impulse = true;
+                        count += 1;
+                    } else if counting && nsi && impulse {
+                        impulse = false;
+                    }
+                }
+            }
+        });
         Self {
-            pins: Pin::create_group(vec![Box::new(nsa), Box::new(nsi)]),
-            sender,
+            //pins: Pin::create_group(vec![Box::new(nsa), Box::new(nsi)]),
+            //sender,
+            thread: Some(thread),
+            stop_thread: stop_copy,
         }
     }
 }
 
-impl<Pin: InputPin> Drop for Dial<Pin> {
+impl Drop for Dial {
     fn drop(&mut self) {
-        // TODO: Stop the thread.
+        self.stop_thread.store(true, Ordering::SeqCst);
+        let thread = self.thread.take();
+        thread.unwrap().join().unwrap();
     }
 }
 
@@ -50,9 +101,8 @@ mod tests {
 
     use std::sync::mpsc::{channel, Receiver};
     use std::thread::sleep;
-    use std::time::Duration;
 
-    fn create_test_dial() -> (SimEnvironment, Dial<SimInputPin>, Receiver<Event>) {
+    fn create_test_dial() -> (SimEnvironment, Dial, Receiver<Event>) {
         let env = SimEnvironment::new();
 
         // The NSA witch is initially open, the NSI switch is closed.
@@ -62,7 +112,7 @@ mod tests {
         env.write_input(NSI, false);
 
         let (send, recv) = channel();
-        let dial = Dial::new(nsa, nsi, send);
+        let dial = Dial::new::<SimInputPin>(nsa, nsi, send);
 
         (env, dial, recv)
     }
@@ -121,8 +171,6 @@ mod tests {
                 assert_eq!(result, Ok(Event::Dialed(i)));
             }
         }
-
-        drop(recv);
 
         // TODO: Test different timing?
     }
