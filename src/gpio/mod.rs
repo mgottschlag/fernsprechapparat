@@ -4,7 +4,7 @@ pub mod sim;
 pub mod sysfs;
 
 /// Single GPIO input pin with support for interrupts.
-trait InputPin {
+pub trait InputPin {
     /// Type of the corresponding output pin (see `InputPin::into_output`).
     type Output: OutputPin;
     /// Group of multiple input pins read together (see `InputPin::create_set`).
@@ -24,7 +24,7 @@ trait InputPin {
 
 /// Group of multiple input pins which supports reading multiple pin values and
 /// waiting for multiple change interrupts.
-trait InputPinGroup {
+pub trait InputPinGroup {
     /// Type of the individual input pins.
     type Pin: InputPin;
 
@@ -41,7 +41,7 @@ trait InputPinGroup {
 }
 
 /// Single GPIO output pin.
-trait OutputPin {
+pub trait OutputPin {
     /// Type of the corresponding input pin (see `OutputPin::into_input`).
     type Input: InputPin;
 
