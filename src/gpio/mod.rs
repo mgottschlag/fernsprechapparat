@@ -17,7 +17,7 @@ pub trait InputPin {
 
     /// Groups multiple input pins into an input pin set so that a single call
     /// can be used to wait for changes of multiple pins.
-    fn create_set(pins: Vec<Box<Self>>) -> Self::Group;
+    fn create_group(pins: Vec<Box<Self>>) -> Self::Group;
     /// Converts this input pin into an output pin.
     fn into_output(self) -> Self::Output;
 }
@@ -35,6 +35,8 @@ pub trait InputPinGroup {
     fn read(&self) -> u64;
     /// Waits for a value change of one of the pins.
     fn wait(&self);
+    /// Returns the number of pins in this group.
+    fn len(&self) -> usize;
 
     /// Splits the set into its individual pins.
     fn split(self) -> Vec<Box<Self::Pin>>;

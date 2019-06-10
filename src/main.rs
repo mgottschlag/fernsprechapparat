@@ -4,11 +4,12 @@
 //! This program is intended for a mod of a FeTAp (Fernsprechtischapparat) of
 //! the Deutsche Bundespost, but will likely work with any similar phones.
 
-mod dial;
-mod gpio;
+pub mod dial;
+pub mod gpio;
 
+#[derive(Debug, PartialEq)]
 enum Event {
-    Dialed(i32),
+    Dialed(u32),
 }
 
 fn main() {

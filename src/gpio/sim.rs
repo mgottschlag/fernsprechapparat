@@ -17,7 +17,7 @@ impl super::InputPin for SimInputPin {
         panic!("Not yet implemented.");
     }
 
-    fn create_set(_pins: Vec<Box<Self>>) -> Self::Group {
+    fn create_group(_pins: Vec<Box<Self>>) -> Self::Group {
         // TODO
         panic!("Not yet implemented.");
     }
@@ -40,6 +40,10 @@ impl super::InputPinGroup for SimInputPinGroup {
         // TODO
         panic!("Not yet implemented.");
     }
+    fn len(&self) -> usize {
+        // TODO
+        panic!("Not yet implemented.");
+    }
 
     fn split(self) -> Vec<Box<Self::Pin>> {
         // TODO
@@ -57,6 +61,42 @@ impl super::OutputPin for SimOutputPin {
         panic!("Not yet implemented.");
     }
     fn into_input(self) -> Self::Input {
+        // TODO
+        panic!("Not yet implemented.");
+    }
+}
+
+struct SimEnvironmentState {
+    // TODO
+}
+
+/// Simulated device environment which can be used to generate input and output
+/// pins.
+pub struct SimEnvironment {
+    // TODO
+}
+
+impl SimEnvironment {
+    pub fn new() -> Self {
+        SimEnvironment {
+            // TODO
+        }
+    }
+
+    pub fn create_input_pin(&self, index: usize, can_change_type: bool) -> SimInputPin {
+        // TODO
+        panic!("Not yet implemented.");
+    }
+    pub fn create_output_pin(&self, index: usize, can_change_type: bool) -> SimOutputPin {
+        // TODO
+        panic!("Not yet implemented.");
+    }
+
+    pub fn write_input(&self, index: usize, value: bool) {
+        // TODO
+        panic!("Not yet implemented.");
+    }
+    pub fn read_output(&self, index: usize) -> bool {
         // TODO
         panic!("Not yet implemented.");
     }

@@ -15,7 +15,7 @@ impl super::InputPin for SysfsInputPin {
         panic!("Not yet implemented.");
     }
 
-    fn create_set(_pins: Vec<Box<Self>>) -> Self::Group {
+    fn create_group(_pins: Vec<Box<Self>>) -> Self::Group {
         // TODO
         panic!("Not yet implemented.");
     }
@@ -35,6 +35,10 @@ impl super::InputPinGroup for SysfsInputPinGroup {
         panic!("Not yet implemented.");
     }
     fn wait(&self) {
+        // TODO
+        panic!("Not yet implemented.");
+    }
+    fn len(&self) -> usize {
         // TODO
         panic!("Not yet implemented.");
     }
