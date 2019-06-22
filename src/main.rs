@@ -5,11 +5,14 @@
 //! the Deutsche Bundespost, but will likely work with any similar phones.
 
 mod dial;
+mod earpiece;
 mod gpio;
 
 #[derive(Debug, PartialEq)]
 pub enum Event {
     Dialed(u32),
+    EarpiecePickedUp,
+    EarpiecePutDown,
 }
 
 fn main() {
