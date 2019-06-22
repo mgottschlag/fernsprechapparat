@@ -4,9 +4,8 @@
 //! This program is intended for a mod of a FeTAp (Fernsprechtischapparat) of
 //! the Deutsche Bundespost, but will likely work with any similar phones.
 
-// TODO: Remove pub
-pub mod dial;
-pub mod gpio;
+mod dial;
+mod gpio;
 
 #[derive(Debug, PartialEq)]
 pub enum Event {

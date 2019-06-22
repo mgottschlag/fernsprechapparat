@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 
+#[allow(dead_code)]
 pub mod sim;
 pub mod sysfs;
 

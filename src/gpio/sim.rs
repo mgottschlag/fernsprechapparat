@@ -22,7 +22,7 @@ impl super::InputPin for SimInputPin {
         // TODO
         panic!("Not yet implemented.");
     }
-    fn wait_timeout(&self, timeout: Duration) -> bool {
+    fn wait_timeout(&self, _timeout: Duration) -> bool {
         // TODO
         panic!("Not yet implemented.");
     }
