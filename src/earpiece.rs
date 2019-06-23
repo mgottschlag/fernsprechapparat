@@ -71,5 +71,27 @@ mod tests {
     use std::sync::mpsc::{channel, Receiver};
     use std::thread::sleep;
 
-    // TODO
+    #[test]
+    fn test_earpiece() {
+        const HOOK_PIN: usize = 0;
+
+        let env = SimEnvironment::new();
+        let hook = env.create_input_pin(HOOK_PIN, false);
+        env.write_input(HOOK_PIN, false);
+
+        let (send, recv) = channel();
+        let earpiece = Earpiece::new::<SimInputPin>(hook, send);
+
+        // Make sure the thread is ready.
+        sleep(Duration::from_millis(10));
+        assert!(recv.try_recv().is_err());
+
+        env.write_input(HOOK_PIN, true);
+        sleep(Duration::from_millis(10));
+        assert_eq!(recv.try_recv(), Ok(Event::EarpiecePickedUp));
+
+        env.write_input(HOOK_PIN, false);
+        sleep(Duration::from_millis(10));
+        assert_eq!(recv.try_recv(), Ok(Event::EarpiecePutDown));
+    }
 }
