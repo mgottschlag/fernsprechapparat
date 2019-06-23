@@ -19,12 +19,13 @@ impl super::InputPin for SimInputPin {
         get_atomic_bit(&self.env.input_state, self.index)
     }
     fn wait(&self) {
-        // TODO
-        panic!("Not yet implemented.");
+        self.env.wait(1u64 << self.index);
     }
-    fn wait_timeout(&self, _timeout: Duration) -> bool {
-        // TODO
-        panic!("Not yet implemented.");
+    fn wait_timeout(&self, timeout: Duration) -> bool {
+        match self.env.wait_timeout(timeout, 1u64 << self.index) {
+            Some(_) => true,
+            None => false,
+        }
     }
 
     fn create_group(pins: Vec<Box<Self>>) -> Self::Group {
@@ -76,41 +77,12 @@ impl super::InputPinGroup for SimInputPinGroup {
         result
     }
     fn wait(&self) {
-        let mut input_changed = self.env.input_changed.lock().unwrap();
-        loop {
-            if (*input_changed & self.mask) != 0 {
-                *input_changed &= !self.mask;
-                return;
-            }
-            input_changed = self.env.input_condvar.wait(input_changed).unwrap();
-        }
+        self.env.wait(self.mask);
     }
     fn wait_timeout(&self, timeout: Duration) -> Option<u64> {
-        let mut input_changed = self.env.input_changed.lock().unwrap();
-        if (*input_changed & self.mask) != 0 {
-            let changed = *input_changed & self.mask;
-            *input_changed &= !self.mask;
-            return Some(self.indices_to_pin_bitmap(changed));
-        }
-        let (mut input_changed, timeout_res) = self
-            .env
-            .input_condvar
-            .wait_timeout(input_changed, timeout)
-            .unwrap();
-        if timeout_res.timed_out() {
-            return None;
-        }
-
-        if (*input_changed & self.mask) != 0 {
-            let changed = *input_changed & self.mask;
-            *input_changed &= !self.mask;
-            return Some(self.indices_to_pin_bitmap(changed));
-        }
-
-        // TODO: We do not repeat the call. Therefore, this function causes
-        // spurious wakeups. Repeating the call requires more complex timeout
-        // calculation.
-        return None;
+        self.env
+            .wait_timeout(timeout, self.mask)
+            .map(|changed| self.indices_to_pin_bitmap(changed))
     }
     fn len(&self) -> usize {
         self.indices.len()
@@ -153,6 +125,45 @@ struct SimEnvironmentState {
     output_state: AtomicU64,
     is_output: AtomicU64,
     can_change_type: AtomicU64,
+}
+
+impl SimEnvironmentState {
+    fn wait(&self, mask: u64) {
+        let mut input_changed = self.input_changed.lock().unwrap();
+        loop {
+            if (*input_changed & mask) != 0 {
+                *input_changed &= !mask;
+                return;
+            }
+            input_changed = self.input_condvar.wait(input_changed).unwrap();
+        }
+    }
+    fn wait_timeout(&self, timeout: Duration, mask: u64) -> Option<u64> {
+        let mut input_changed = self.input_changed.lock().unwrap();
+        if (*input_changed & mask) != 0 {
+            let changed = *input_changed & mask;
+            *input_changed &= !mask;
+            return Some(changed);
+        }
+        let (mut input_changed, timeout_res) = self
+            .input_condvar
+            .wait_timeout(input_changed, timeout)
+            .unwrap();
+        if timeout_res.timed_out() {
+            return None;
+        }
+
+        if (*input_changed & mask) != 0 {
+            let changed = *input_changed & mask;
+            *input_changed &= !mask;
+            return Some(changed);
+        }
+
+        // TODO: We do not repeat the call. Therefore, this function causes
+        // spurious wakeups. Repeating the call requires more complex timeout
+        // calculation.
+        return None;
+    }
 }
 
 /// Simulated device environment which can be used to generate input and output
