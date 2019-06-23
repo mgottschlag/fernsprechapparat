@@ -78,8 +78,6 @@ impl Dial {
             }
         });
         Self {
-            //pins: Pin::create_group(vec![Box::new(nsa), Box::new(nsi)]),
-            //sender,
             thread: Some(thread),
             stop_thread: stop_copy,
         }
