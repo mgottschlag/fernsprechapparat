@@ -4,9 +4,12 @@
 //! This program is intended for a mod of a FeTAp (Fernsprechtischapparat) of
 //! the Deutsche Bundespost, but will likely work with any similar phones.
 
+extern crate pjsua;
+
 mod dial;
 mod earpiece;
 mod gpio;
+mod sip;
 
 #[derive(Debug, PartialEq)]
 pub enum Event {
