@@ -1,4 +1,4 @@
-use pjsua::*;
+use pjproject::*;
 
 use std::ffi::{CStr, CString};
 use std::fmt;

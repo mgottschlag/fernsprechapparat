@@ -1,8 +1,18 @@
 //! Types for GPIO input/output using the Linux sysfs interface.
 
+use std::io;
 use std::time::Duration;
 
 pub struct SysfsInputPin {}
+
+impl SysfsInputPin {
+    pub fn open(pin: usize) -> Result<Self, io::Error> {
+        // TODO
+        Ok(Self {
+            // TODO
+        })
+    }
+}
 
 impl super::InputPin for SysfsInputPin {
     type Output = SysfsOutputPin;
@@ -60,6 +70,15 @@ impl super::InputPinGroup for SysfsInputPinGroup {
 }
 
 pub struct SysfsOutputPin {}
+
+impl SysfsOutputPin {
+    pub fn open(pin: usize) -> Result<Self, io::Error> {
+        // TODO
+        Ok(Self {
+            // TODO
+        })
+    }
+}
 
 impl super::OutputPin for SysfsOutputPin {
     type Input = SysfsInputPin;
