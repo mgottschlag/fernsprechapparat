@@ -4,7 +4,11 @@
 //! This program is intended for a mod of a FeTAp (Fernsprechtischapparat) of
 //! the Deutsche Bundespost, but will likely work with any similar phones.
 
+extern crate confy;
 extern crate pjproject;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 mod console;
 mod dial;
@@ -20,6 +24,8 @@ use gpio::sysfs::{SysfsInputPin, SysfsOutputPin};
 use sip::Sip;
 use state::StateMachine;
 
+use serde::{Deserialize, Serialize};
+
 use std::sync::mpsc::channel;
 
 #[derive(Debug, PartialEq)]
@@ -31,9 +37,24 @@ pub enum Event {
     Unregistered,
 }
 
-const SIP_DOMAIN: &str = "192.168.178.1";
-const SIP_USER: &str = "fernsprechapparat";
-const SIP_PASSWORD: &str = "TODO";
+#[derive(Serialize, Deserialize)]
+struct Config {
+    domain: String,
+    user: String,
+    password: String,
+    cli: bool,
+}
+
+impl ::std::default::Default for Config {
+    fn default() -> Self {
+        Self {
+            domain: "".into(),
+            user: "".into(),
+            password: "".into(),
+            cli: false,
+        }
+    }
+}
 
 // TODO: Correct GPIO numbers.
 const NSA_PIN: usize = 1;
@@ -42,13 +63,20 @@ const RING_PIN: usize = 3;
 const HOOK_PIN: usize = 4;
 
 fn main() {
+    let cfg: Config = confy::load("fernsprechapparat").unwrap();
+    if cfg.password == "" {
+        // Create config if it does not exist yet.
+        confy::store("fernsprechapparat", cfg).ok();
+        panic!("No valid configuration!");
+    }
+
     let (input_send, input_recv) = channel();
 
-    let sip = Sip::new(SIP_DOMAIN, SIP_USER, SIP_PASSWORD);
+    let sip = Sip::new(&cfg.domain, &cfg.user, &cfg.password);
 
     let mut state_machine = StateMachine::new(input_recv);
 
-    if cfg!(console) {
+    if cfg.cli {
         let _input = ConsoleInput::new(input_send);
         state_machine.run();
     } else {
